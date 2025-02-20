@@ -46,7 +46,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variantClasses = getVariantClasses(variant, loading);
   const disabledClasses = (disabled || loading) ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer';
   
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = () => {
     if (!disabled && !loading && onClick) {
       onClick();
     }

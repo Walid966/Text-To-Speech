@@ -16,6 +16,29 @@ interface HTMLAudioElement extends HTMLElement {
   src: string;
 }
 
+interface SpeechRecognitionEvent extends Event {
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+    length: number;
+    isFinal?: boolean;
+  };
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  onresult: (event: SpeechRecognitionEvent) => void;
+  onerror: (event: Event) => void;
+  onend: () => void;
+}
+
 interface VoiceOption {
   name: string;
   lang: string;
@@ -79,48 +102,51 @@ export default function TextToSpeech() {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [recognitionLang, setRecognitionLang] = useState<string>('ar-SA');
   const synth = useRef<SpeechSynthesis | null>(null);
-  const recognition = useRef<any>(null);
+  const recognition = useRef<SpeechRecognition | null>(null);
   const [isRecordingPaused, setIsRecordingPaused] = useState<boolean>(false);
 
   // إضافة دعم تحويل الصوت إلى نص
   useEffect(() => {
-    let recognitionInstance: any = null;
+    let recognitionInstance: SpeechRecognition | null = null;
 
     if (typeof window !== 'undefined') {
-      // @ts-ignore
+      // @ts-expect-error Web Speech API types not fully supported
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         recognitionInstance = new SpeechRecognition();
-        recognitionInstance.continuous = true;
-        recognitionInstance.interimResults = true;
-        recognition.current = recognitionInstance;
-        
-        recognitionInstance.onresult = (event: any) => {
-          const lastResult = event.results[event.results.length - 1];
-          if (lastResult.isFinal) {
-            const transcript = lastResult[0].transcript;
-            setText((prevText) => prevText ? `${prevText} ${transcript}` : transcript);
-          }
-        };
-
-        recognitionInstance.onerror = (event: any) => {
-          console.error('خطأ في التعرف على الصوت:', event.error);
-          setIsListening(false);
-          setIsRecordingPaused(false);
-          alert('حدث خطأ في التعرف على الصوت. يرجى المحاولة مرة أخرى.');
-        };
-
-        recognitionInstance.onend = () => {
-          if (isListening && !isRecordingPaused) {
-            try {
-              recognitionInstance.start();
-            } catch (err) {
-              console.error('خطأ في إعادة تشغيل التعرف على الصوت:', err);
-              setIsListening(false);
-              setIsRecordingPaused(false);
+        if (recognitionInstance) {
+          recognitionInstance.continuous = true;
+          recognitionInstance.interimResults = true;
+          recognition.current = recognitionInstance;
+          
+          recognitionInstance.onresult = (event: SpeechRecognitionEvent) => {
+            const results = event.results;
+            const lastResult = results[results.length - 1];
+            if (Array.isArray(lastResult) && lastResult[0] && 'transcript' in lastResult[0]) {
+              const transcript = lastResult[0].transcript;
+              setText((prevText) => prevText ? `${prevText} ${transcript}` : transcript);
             }
-          }
-        };
+          };
+
+          recognitionInstance.onerror = (event: Event) => {
+            console.error('خطأ في التعرف على الصوت:', event);
+            setIsListening(false);
+            setIsRecordingPaused(false);
+            alert('حدث خطأ في التعرف على الصوت. يرجى المحاولة مرة أخرى.');
+          };
+
+          recognitionInstance.onend = () => {
+            if (isListening && !isRecordingPaused && recognitionInstance) {
+              try {
+                recognitionInstance.start();
+              } catch (err) {
+                console.error('خطأ في إعادة تشغيل التعرف على الصوت:', err);
+                setIsListening(false);
+                setIsRecordingPaused(false);
+              }
+            }
+          };
+        }
       }
     }
 
@@ -135,7 +161,7 @@ export default function TextToSpeech() {
         setIsRecordingPaused(false);
       }
     };
-  }, []);
+  }, [isListening, isRecordingPaused]);
 
   const toggleListening = () => {
     if (!recognition.current) {
