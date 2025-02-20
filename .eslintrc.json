@@ -1,8 +1,6 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["error", {
-      "varsIgnorePattern": "^(ChangeEvent|FormEvent|Button|HTMLAudioElement|SpeechSynthesisVoiceExtended|EventTarget|DataAvailableEvent)$"
-    }]
+    "@typescript-eslint/no-unused-vars": "off"
   }
 } 

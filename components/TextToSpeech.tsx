@@ -1,8 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
-import Button from './Button';
 import RecordingControls from './RecordingControls';
 import PlaybackControls from './PlaybackControls';
 
@@ -10,10 +8,6 @@ declare global {
   interface Window {
     webkitAudioContext: typeof AudioContext;
   }
-}
-
-interface HTMLAudioElement extends HTMLElement {
-  src: string;
 }
 
 interface SpeechRecognitionEvent extends Event {
