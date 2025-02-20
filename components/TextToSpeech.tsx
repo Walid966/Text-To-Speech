@@ -7,18 +7,20 @@ import PlaybackControls from './PlaybackControls';
 declare global {
   interface Window {
     webkitAudioContext: typeof AudioContext;
+    SpeechRecognition: new () => SpeechRecognition;
+    webkitSpeechRecognition: new () => SpeechRecognition;
   }
+}
+
+interface SpeechRecognitionResult {
+  transcript: string;
+  isFinal?: boolean;
 }
 
 interface SpeechRecognitionEvent extends Event {
   results: {
-    [index: number]: {
-      [index: number]: {
-        transcript: string;
-      };
-    };
+    [index: number]: SpeechRecognitionResult[];
     length: number;
-    isFinal?: boolean;
   };
 }
 
@@ -104,10 +106,9 @@ export default function TextToSpeech() {
     let recognitionInstance: SpeechRecognition | null = null;
 
     if (typeof window !== 'undefined') {
-      // @ts-expect-error Web Speech API types not fully supported
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        recognitionInstance = new SpeechRecognition();
+      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognitionAPI) {
+        recognitionInstance = new SpeechRecognitionAPI();
         if (recognitionInstance) {
           recognitionInstance.continuous = true;
           recognitionInstance.interimResults = true;
